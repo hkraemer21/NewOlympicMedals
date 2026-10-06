@@ -15,6 +15,7 @@ import "./App.css";
 import NewCountry from "./components/NewCountry";
 import Login from "./components/Login";
 import Logout from "./components/Logout";
+import NotificationToast from "./components/NotificationToast";
 import axios from "axios";
 import { getUser } from "./Utils.js";
 import { HubConnectionBuilder } from "@microsoft/signalr";
@@ -28,6 +29,7 @@ function App() {
 
   const [connection, setConnection] = useState(null);
   const [countries, setCountries] = useState([]);
+  const [notification, setNotification] = useState(null);
   const [user, setUser] = useState({
     name: null,
     authenticated: false,
@@ -45,6 +47,10 @@ function App() {
   // latestCountries is a ref variable to countries (state)
   // this is needed to access state variable in useEffect w/o dependency
   latestCountries.current = countries;
+
+  function showNotification(title, message) {
+    setNotification({ title, message });
+  }
 
   useEffect(() => {
     // initial data loaded here
@@ -161,6 +167,7 @@ function App() {
           },
         }
       );
+      showNotification("Country added", `${name} was added successfully.`);
     } catch (ex) {
       if (
         ex.response &&
@@ -173,7 +180,6 @@ function App() {
         console.log("Request failed");
       }
     }
-    console.log("ADD");
   }
   async function handleDelete(countryId) {
     const originalCountries = countries;
@@ -184,6 +190,7 @@ function App() {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
+      showNotification("Country deleted", "The country was deleted successfully.");
     } catch (ex) {
       if (ex.response && ex.response.status === 404) {
         // country already deleted
@@ -246,6 +253,7 @@ function App() {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
+      showNotification("Changes saved", "The medal totals were saved successfully.");
     } catch (ex) {
       if (ex.response && ex.response.status === 404) {
         // country already deleted
@@ -277,6 +285,7 @@ function App() {
       const encoded = resp.data.token;
       localStorage.setItem("token", encoded);
       setUser(getUser(encoded));
+      showNotification("Logged in", "You have been logged in successfully.");
     } catch (ex) {
       if (
         ex.response &&
@@ -299,6 +308,7 @@ function App() {
       canPatch: false,
       canDelete: false,
     });
+    showNotification("Logged out", "You have been logged out.");
   }
   function getAllMedalsTotal() {
     let sum = 0;
@@ -323,6 +333,10 @@ function App() {
       ) : (
         <Login onLogin={handleLogin} />
       )}
+      <NotificationToast
+        notification={notification}
+        onClose={() => setNotification(null)}
+      />
       <Flex p="2" pl="8" className="fixedHeader" justify="between">
         <Heading size="6">
           Olympic Medals
